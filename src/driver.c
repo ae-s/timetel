@@ -134,7 +134,7 @@ static struct alpha indirect_regs[] =
 
 void proslic_setreg(int cs, uint8_t reg, uint8_t value);
 unsigned char proslic_getreg(int cs, uint8_t reg);
-static bool spinwait_indirect_access(int cs, bool want_result);
+static bool spinwait_indirect_access(int cs);
 bool proslic_setreg_indirect(int cs, uint8_t reg, uint16_t value);
 int proslic_getreg_indirect(int cs, uint8_t reg);
 
@@ -240,19 +240,16 @@ unsigned char proslic_getreg(int cs, uint8_t reg)
 /* wait for the indirect access to complete.  check a few thousand
  * times and then give up.
  */
-static bool spinwait_indirect_access(int cs, bool want_result)
+static bool spinwait_indirect_access(int cs)
 {
     int count = 6000;
+    struct timespec delay = {0, 100*MICROSECONDS};
     unsigned char data;
     while (--count >= 0) {
         data = proslic_getreg(cs, REG_ISTATUS);
-        if (want_result) {
-            /* looking for a "something is here for you" */
-            if (data == 1) break;
-        } else {
-            /* looking for availability to submit a request */
-            if (data == 0) break;
-        }
+        /* looking for availability to submit a request */
+        if (data == 0) break;
+        nanosleep(&delay, NULL);
     }
 
     if (count <= 0) {
@@ -267,7 +264,7 @@ bool proslic_setreg_indirect(int cs, uint8_t address, uint16_t value)
     unsigned long flags;
     int res = false;
     dprintf("setting indirectly [%x]=%x\n", (int) address, (int) value);
-    if (true == spinwait_indirect_access(cs, false)) {
+    if (true == spinwait_indirect_access(cs)) {
         proslic_setreg(cs, REG_IDA_LO, (unsigned char)(value & 0xFF));
         proslic_setreg(cs, REG_IDA_HI, (unsigned char)((value & 0xFF00)>>8));
         proslic_setreg(cs, REG_IAA, address);
@@ -285,10 +282,10 @@ int proslic_getreg_indirect(int cs, uint8_t address)
     if (address == 0xff) {
         return 0;
     }
-        
-    if (true == spinwait_indirect_access(cs, false)) {
+
+    if (true == spinwait_indirect_access(cs)) {
         proslic_setreg(cs, REG_IAA, address);
-        if (true == spinwait_indirect_access(cs, true)) {
+        if (true == spinwait_indirect_access(cs)) {
             unsigned char data1, data2;
             data1 = proslic_getreg(cs, REG_IDA_LO);
             data2 = proslic_getreg(cs, REG_IDA_HI);
