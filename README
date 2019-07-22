@@ -17,3 +17,20 @@
 ===========================================================================
   a 2019 burning man art project                                by astrid
 ---------------------------------------------------------------------------
+
+this takes the form of a tape loop
+
+every recording is retained, on an infinite "tape".  each recording is
+a segment in its own file.
+
+every time it is picked up we start playing at ten minutes prior to
+the end of the tape.
+
+for each call we take the various tape segments and splice together
+the most recent ten minutes.  this input tape is fed to asterisk.
+
+the dialplan plays and records at the same time.  the input is
+discarded.  the output goes to a tape segment.
+
+at the end of a call, the new recording is indexed and stored.  then a
+new input tape is prepared.
