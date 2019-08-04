@@ -8,23 +8,40 @@
 #
 # copyright 2019 æstrid smith
 
+set -x
+
 cd /home/asterisk/tapes
 DURATION=0
 
 FN1=_tape-prelim.au
-OUTFILE=tape.au
+OUTFILE=/home/asterisk/latest-tape.ulaw
+NAMES=""
 
-for P in $( ls -1 | rev ) ; do
+rawfmt="-t raw -e mu-law -r 8000 -b 8"
+
+echo "debug info ==="
+pwd
+ls -1
+echo '==='
+for P in $( ls -1 ) ; do
     CUR_LEN=$( echo $P | cut -d_ -f2 )
-    DURATION=$((DURATION + CUR_LEN))
+    echo "P is" $P
+    echo "CUR_LEN is" $CUR_LEN
+    echo "DURATION is" $DURATION
+
     if [ $DURATION -le 600 ] ; then
-        echo $P
+        NAMES="$NAMES $P"
     else
         break
     fi
-done | tac | xargs cat > "$FN1"
-# TODO: use `sox splice` instead of `cat` like some sort of heathen
+    # 1/ will make `dc` round to an integer
+    DURATION=$( echo $DURATION $CUR_LEN + 1/ p | dc )
+done
 
-sox "$FN1" "$OUTFILE" trim -10:00
+# TODO: use `sox splice` instead of `cat` like some sort of heathen
+cat $NAMES > $FN1
+
+sox $rawfmt "$FN1" $rawfmt "$OUTFILE" trim -10:00 =10:00 ||
+    mv "$FN1" "$OUTFILE"
 rm "$FN1"
 

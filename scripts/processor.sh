@@ -8,13 +8,21 @@
 #
 # copyright 2019 æstrid smith
 
-INFILE="/var/spool/asterisk/call-out.ulaw"
-OUTDIR="/home/asterisk/tapes"
-LENGTH=$( sox -t raw -e mu-law -r 8000 -b 8 "$INFILE" -n stat 2>&1 | 
-              grep -i seconds | 
-              cut -d: -f2 )
-LAST_RECORDING=$( ls "$OUTDIR" | tail -n 1 | cut -d- -f1 )
-OUTFILE=$(( LAST_RECORDING + 1 ))_"$LENGTH"_.au
+set -x
 
-mv "$INFILE" "$OUTFILE"-"$LENGTH".au
+rawfmt="-t raw -e mu-law -r 8000 -b 8"
+
+INFILE="/var/spool/asterisk/monitor/call-in.ulaw"
+OUTDIR="/home/asterisk/tapes"
+LENGTH=$( sox $rawfmt "$INFILE" -n stat 2>&1 | 
+              grep -i seconds | 
+              cut -d: -f2 |
+	      sed -e 's/[^0-9.]//g'
+      )
+LAST_RECORDING=$( ls "$OUTDIR" | tail -n 1 | cut -d_ -f1 )
+OUTNR=$( printf "%04d" $(( LAST_RECORDING + 1)) )
+OUTFILE="$OUTNR"_"$LENGTH"_.au
+
+mv "$INFILE" "$OUTDIR"/"$OUTFILE"
+rm -f "/var/spool/asterisk/monitor/call-in.ulaw"
 
