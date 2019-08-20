@@ -19,7 +19,7 @@ LENGTH=$( sox $rawfmt "$INFILE" -n stat 2>&1 |
               cut -d: -f2 |
 	      sed -e 's/[^0-9.]//g'
       )
-LAST_RECORDING=$( ls "$OUTDIR" | tail -n 1 | cut -d_ -f1 )
+LAST_RECORDING=$( ls "$OUTDIR" | grep '^[0-9][0-9][0-9][0-9]_' | tail -n 1 | cut -d_ -f1 | sed -e 's/^0*//' )
 OUTNR=$( printf "%04d" $(( LAST_RECORDING + 1)) )
 OUTFILE="$OUTNR"_"$LENGTH"_.au
 

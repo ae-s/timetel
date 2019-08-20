@@ -13,7 +13,7 @@ set -x
 cd /home/asterisk/tapes
 DURATION=0
 
-FN1=_tape-prelim.au
+FN1=/home/asterisk/_tape-prelim.au
 OUTFILE=/home/asterisk/latest-tape.ulaw
 NAMES=""
 
@@ -23,14 +23,14 @@ echo "debug info ==="
 pwd
 ls -1
 echo '==='
-for P in $( ls -1 ) ; do
+for P in $( ls -1 | tac ) ; do
     CUR_LEN=$( echo $P | cut -d_ -f2 )
     echo "P is" $P
     echo "CUR_LEN is" $CUR_LEN
     echo "DURATION is" $DURATION
 
     if [ $DURATION -le 600 ] ; then
-        NAMES="$NAMES $P"
+        NAMES="$P $NAMES"
     else
         break
     fi
@@ -41,7 +41,7 @@ done
 # TODO: use `sox splice` instead of `cat` like some sort of heathen
 cat $NAMES > $FN1
 
-sox $rawfmt "$FN1" $rawfmt "$OUTFILE" trim -10:00 =10:00 ||
+sox $rawfmt "$FN1" $rawfmt "$OUTFILE" reverse trim 0 10:00 reverse ||
     mv "$FN1" "$OUTFILE"
 rm "$FN1"
 
